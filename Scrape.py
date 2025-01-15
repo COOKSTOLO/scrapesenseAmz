@@ -6,12 +6,11 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time  # Asegúrate de importar el módulo time
 
-url = "https://amzn.to/40fdfRv"
+url = "https://amzn.to/42cwRbx"
 response = requests.get(url)
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 driver.get(url)
-
 
 # Buscar todos los elementos <span> con la clase 'a-price-whole'
 spans = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
@@ -44,15 +43,20 @@ if response.status_code == 200:
     else:
         print("No se encontraron elementos con el precio original especificado.")
     
+    # Buscar todos los elementos <div> con el id 'installmentCalculator_feature_div'
+    installment_elements = driver.find_elements(By.ID, 'installmentCalculator_feature_div')
+    if installment_elements:  # Verificar si hay elementos encontrados
+        for element in installment_elements:
+            if "intereses" in element.text.lower():  # Verificar si el texto contiene la palabra "intereses"
+                print("Meses:", element.text)  # Imprimir el contenido de cada elemento que contiene "intereses"
+    else:
+        print("No se encontraron elementos con el id 'installmentCalculator_feature_div'.")
     
     
 else:
     print("Error al acceder a la página:", response.status_code)
 
-# Inicializar el controlador de Selenium
 
-
-# Cerrar el controlador
 driver.quit()
 
 
