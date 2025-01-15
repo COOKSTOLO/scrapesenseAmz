@@ -38,9 +38,9 @@ if response.status_code == 200:
     installment_elements = driver.find_elements(By.ID, 'installmentCalculator_feature_div')
     if installment_elements:  # Verificar si hay elementos encontrados
         for element in installment_elements:
-            if "intereses" in element.text.lower():  # Verificar si el texto contiene la palabra "intereses"
+            if "intereses" in element.text.lower(): 
                 filtered_text = element.text.replace("Ver 2 planes de pago", "").strip()
-                print("Meses:", filtered_text)  # Imprimir el texto filtrado
+                print("Meses:", filtered_text) 
     else:
         print("No se encontraron elementos con el id 'installmentCalculator_feature_div'.")
 else:
