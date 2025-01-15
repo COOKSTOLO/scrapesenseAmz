@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time  # Asegúrate de importar el módulo time
 
-url = "https://amzn.to/3C9aut3"
+url = "https://amzn.to/40fdfRv"
 response = requests.get(url)
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
@@ -30,7 +30,21 @@ if response.status_code == 200:
     else:
         print("No se encontró el título del producto.")
     
-    # Buscar el precio anterior
+    # Buscar todos los elementos <span> con el atributo aria-hidden="true" y las clases especificadas usando Selenium
+    discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
+    if discount_elements:  # Verificar si hay elementos encontrados
+        print("Descuento:", discount_elements[0].text)  # Imprimir solo el primer descuento encontrado
+    else:
+        print("No se encontraron elementos con las clases de descuento especificadas.")
+    
+    # Buscar el precio original usando Selenium
+    original_price_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(text(), "$")]')
+    if original_price_elements:  # Verificar si hay elementos encontrados
+        print("Precio original:", original_price_elements[0].text)  # Imprimir solo el primer precio original encontrado
+    else:
+        print("No se encontraron elementos con el precio original especificado.")
+    
+    
     
 else:
     print("Error al acceder a la página:", response.status_code)
