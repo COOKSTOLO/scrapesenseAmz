@@ -1,31 +1,34 @@
-import requests
-from bs4 import BeautifulSoup
+import pickle
+import pyperclip
+import os  # Importar el módulo os
+import time  # Importar el módulo time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta  # Asegúrate de importar timedelta
+import requests
+import json  # Importar el módulo json
 
-def buscar_links_mercadolibre():
-    url_descuentos_amz = "https://www.descuento.com.mx/buscar?keyword=amazon"
-    try:
-        respuesta_descuentos = requests.get(url_descuentos_amz)
-        respuesta_descuentos.raise_for_status()
-        soup_descuentos = BeautifulSoup(respuesta_descuentos.text, 'html.parser')
-        elementos_descuentos = soup_descuentos.find_all('a', class_='badge badge-info price', href=True)
-        links_amz_descuentos = [elemento['href'] for elemento in elementos_descuentos][:5]
-        if links_amz_descuentos:
-            print("Enlaces de amazon encontrados en la página de descuentos:")
-        else:
-            print("No se encontraron enlaces de amazon en la página de descuentos.")
-        all_links = links_amz_descuentos 
-        
-        if all_links:
-            all_links.append("finish")
-            df = pd.DataFrame(all_links, columns=['Enlaces'])
-            fecha_actual = datetime.now().strftime('%d/%m/%y').replace('/', '-')
-            nombre_archivo = f"{fecha_actual} NoafiliadosAmz.xlsx"
-            df.to_excel(nombre_archivo, index=False)
-            print(f"Los enlaces se han guardado en el archivo: {nombre_archivo}")
-        else:
-            print("No se encontraron enlaces para guardar.")
-    except requests.exceptions.RequestException as e:
-        print(f"Error al realizar la solicitud: {e}")
-buscar_links_mercadolibre()
+
+
+
+options = Options()
+options.add_argument("--start-maximized")
+
+# Inicializar el controlador de Selenium
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
+
+
+# Abre el enlace en el navegador
+driver.get("https://dyn.keepa.com/r/?type=amazon&smile=0&domain=11&asin=B08YZ9NMB5&source=website&path=dealsOverlay/AMAZON")
+
+# Mantén la página abierta durante 15 segundos
+time.sleep(9000)
+
+
