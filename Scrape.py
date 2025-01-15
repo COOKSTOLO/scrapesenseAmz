@@ -5,8 +5,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time  # Asegúrate de importar el módulo time
+import re  # Asegúrate de importar el módulo re
 
-url = "https://amzn.to/42cwRbx"
+url = "https://amzn.to/4jwsDC7"
 response = requests.get(url)
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
@@ -48,7 +49,9 @@ if response.status_code == 200:
     if installment_elements:  # Verificar si hay elementos encontrados
         for element in installment_elements:
             if "intereses" in element.text.lower():  # Verificar si el texto contiene la palabra "intereses"
-                print("Meses:", element.text)  # Imprimir el contenido de cada elemento que contiene "intereses"
+                # Excluir la parte "Ver 2 planes de pago"
+                filtered_text = element.text.replace("Ver 2 planes de pago", "").strip()
+                print("Meses:", filtered_text)  # Imprimir el texto filtrado
     else:
         print("No se encontraron elementos con el id 'installmentCalculator_feature_div'.")
     
@@ -58,6 +61,8 @@ else:
 
 
 driver.quit()
+
+
 
 
 
