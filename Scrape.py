@@ -1,51 +1,96 @@
+import json
 from bs4 import BeautifulSoup
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-import time  # Asegúrate de importar el módulo time
-import re  # Asegúrate de importar el módulo re
+import time
+import re
+from amazoncaptcha import AmazonCaptcha
 
-url = "https://amzn.to/4jwsDC7"
-response = requests.get(url)
+# Cargar el archivo JSON con las URLs
+with open('enlaces_amz.json', 'r') as file:
+    urls = json.load(file)
 
+# Configurar el driver de Selenium
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-driver.get(url)
-spans = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
-if spans:  # Verificar si hay elementos encontrados
-    print("Precio actual:", spans[0].text)  
-else:
-    print("No se encontraron elementos con la clase 'a-price-whole'.")
-if response.status_code == 200:
-    soup = BeautifulSoup(response.content, 'html.parser')
-    title = soup.find('span', id='productTitle')
-    if title:
-        print("Título:", title.get_text(strip=True))
-    else:
-        print("No se encontró el título del producto.")
-    # Buscar todos los elementos <span> con el atributo aria-hidden="true" 
-    discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
-    if discount_elements:  # Verificar si hay elementos encontrados
-        print("Descuento:", discount_elements[0].text)  # Imprimir solo el primer descuento encontrado
-    else:
-        print("No se encontraron elementos con las clases de descuento especificadas.")
-    original_price_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(text(), "$")]')
-    if original_price_elements:  # Verificar si hay elementos encontrados
-        print("Precio original:", original_price_elements[0].text)  # Imprimir solo el primer precio original encontrado
-    else:
-        print("No se encontraron elementos con el precio original especificado.")
-    installment_elements = driver.find_elements(By.ID, 'installmentCalculator_feature_div')
-    if installment_elements:  # Verificar si hay elementos encontrados
-        for element in installment_elements:
-            if "intereses" in element.text.lower(): 
-                filtered_text = element.text.replace("Ver 2 planes de pago", "").strip()
-                print("Meses:", filtered_text) 
-    else:
-        print("No se encontraron elementos con el id 'installmentCalculator_feature_div'.")
-else:
-    print("Error al acceder a la página:", response.status_code)
 
+def solve_captcha(driver):
+    try:
+        link = driver.find_element(By.XPATH, "//div[@class='a-row a-text-center']//img").get_attribute('src')
+        captcha = AmazonCaptcha.fromlink(link)
+        captcha_value = AmazonCaptcha.solve(captcha)
+        driver.find_element(By.ID, "captchacharacters").send_keys(captcha_value)
+        driver.find_element(By.CLASS_NAME, "a-button-text").click()
+        print("Captcha resuelto y botón clickeado.")
+        time.sleep(5)  # Esperar 5 segundos después de resolver el captcha
+    except Exception as e:
+        print(f"Error al resolver el captcha: {e}")
+
+# Iterar sobre cada URL
+for url in urls:
+    response = requests.get(url)
+    driver.get(url)
+    
+    # Esperar 5 segundos para que la página cargue
+    time.sleep(5)
+    
+    # Intentar resolver el captcha si aparece
+    try:
+        captcha_image = driver.find_element(By.XPATH, "//div[@class='a-row a-text-center']//img")
+        if captcha_image:
+            solve_captcha(driver)
+    except:
+        print("No se encontró captcha, continuando con el scraping.")
+    
+    spans = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
+    if spans:
+        print("Precio actual:", spans[0].text)
+    else:
+        print("No se encontraron elementos con la clase 'a-price-whole'.")
+    
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+        title = soup.find('span', id='productTitle')
+        if title:
+            print("Título:", title.get_text(strip=True))
+        else:
+            print("No se encontró el título del producto.")
+        
+        discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
+        if discount_elements:
+            print("Descuento:", discount_elements[0].text)
+        else:
+            print("No se encontraron elementos con las clases de descuento especificadas.")
+        
+        # Buscar elementos que contengan "Precio anterior" o "Precio de lista:", excluyendo "mililitro"
+        original_price_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and (contains(text(), "Precio anterior:") or contains(text(), "Precio de lista:")) and not(contains(text(), "mililitro"))]')
+        
+        if original_price_elements:
+            for element in original_price_elements:
+                text = element.text.strip()
+                # Verificar si el texto contiene un precio después de "Precio de lista:" o "Precio anterior:"
+                if "Precio de lista:" in text or "Precio anterior:" in text:
+                    print("Precio encontrado:", text)
+        else:
+            print("No se encontraron elementos con los textos especificados.")
+        
+        installment_elements = driver.find_elements(By.ID, 'installmentCalculator_feature_div')
+        if installment_elements:
+            for element in installment_elements:
+                if "intereses" in element.text.lower():
+                    filtered_text = element.text.replace("Ver 2 planes de pago", "").strip()
+                    print("Meses:", filtered_text)
+        else:
+            print("No se encontraron elementos con el id 'installmentCalculator_feature_div'.")
+    else:
+        print("Error al acceder a la página:", response.status_code)
+    
+    # Esperar 15 segundos antes de la siguiente iteración
+    time.sleep(15)
+
+# Cerrar el driver después de procesar todas las URLs
 driver.quit()
 
 
