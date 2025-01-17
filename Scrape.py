@@ -44,12 +44,6 @@ for url in urls:
     except:
         print("No se encontró captcha, continuando con el scraping.")
     
-    spans = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
-    if spans:
-        print("Precio actual:", spans[0].text)
-    else:
-        print("No se encontraron elementos con la clase 'a-price-whole'.")
-    
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
         title = soup.find('span', id='productTitle')
@@ -58,19 +52,29 @@ for url in urls:
         else:
             print("No se encontró el título del producto.")
         
+        # Buscar todos los div con id 'imgTagWrapperId' y obtener los src de las imágenes
+        img_divs = driver.find_elements(By.ID, 'imgTagWrapperId')
+        for div in img_divs:
+            img = div.find_element(By.TAG_NAME, 'img')
+            if img:
+                print("Imagen src:", img.get_attribute('src'))
+        
+        spans = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
+        if spans:
+            print("Precio actual:", spans[0].text)
+        else:
+            print("No se encontraron elementos con la clase 'a-price-whole'.")
+        
         discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
         if discount_elements:
             print("Descuento:", discount_elements[0].text)
         else:
             print("No se encontraron elementos con las clases de descuento especificadas.")
         
-        # Buscar elementos que contengan "Precio anterior" o "Precio de lista:", excluyendo "mililitro"
         original_price_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and (contains(text(), "Precio anterior:") or contains(text(), "Precio de lista:")) and not(contains(text(), "mililitro"))]')
-        
         if original_price_elements:
             for element in original_price_elements:
                 text = element.text.strip()
-                # Verificar si el texto contiene un precio después de "Precio de lista:" o "Precio anterior:"
                 if "Precio de lista:" in text or "Precio anterior:" in text:
                     print("Precio encontrado:", text)
         else:
