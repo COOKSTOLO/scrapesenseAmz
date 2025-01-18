@@ -184,17 +184,20 @@ async def procesar_enlaces_auto(app: Application) -> None:
             if image_data:
                 await app.bot.send_photo(chat_id=chat_id, photo=image_data, caption=resultado)
             else:
-                await app.bot.send_message(chat_id=chat_id, text=f"No se pudo obtener la imagen del producto para el enlace: {enlace}")
+                # No enviar mensaje si no se encuentra la imagen
+                pass
             
             await asyncio.sleep(380)  # 13 minutos en segundos
         
         try:
             os.remove(file_path)
             print(f"Archivo {file_path} eliminado exitosamente.")
-            # await app.bot.send_message(chat_id=chat_id, text=f"Archivo {file_path} eliminado exitosamente.")
+            # No enviar mensaje de error a Telegram
+            pass
         except OSError as e:
             print(f"Error al eliminar el archivo {file_path}: {e}")
-            # await app.bot.send_message(chat_id=chat_id, text=f"Error al eliminar el archivo {file_path}: {e}")
+            # No enviar mensaje de error a Telegram
+            pass
 
 async def procesar_enlaces(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await procesar_enlaces_auto(context.application)
