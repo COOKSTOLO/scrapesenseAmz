@@ -151,6 +151,10 @@ for url in urls:
                 # Verificar si realmente contiene información de meses sin intereses
                 if "meses sin intereses" not in installment_text.lower():
                     installment_text = None
+                else:
+                    # Eliminar la parte "Ver 2 planes de pago" utilizando expresión regular
+                    # Suponiendo que la frase siempre está separada por un punto
+                    installment_text = re.sub(r'\.\s*Ver\s*\d+\s*planes de pago', '', installment_text)
             else:
                 installment_text = None
             
