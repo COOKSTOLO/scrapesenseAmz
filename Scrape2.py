@@ -77,7 +77,8 @@ def solve_captcha(driver):
         print(f"Error al resolver el captcha: {e}")
 
 def format_price(price: str) -> str:
-    return price
+    # Eliminar los decimales del precio
+    return re.sub(r'\.\d{2}', '', price)
 
 def sanitize_text(text: str) -> str:
     return text.encode('utf-8', 'ignore').decode('utf-8')
@@ -138,7 +139,7 @@ for url in urls:
                 # Usar expresión regular para eliminar "Precio anterior:" o "Precio de lista:"
                 match = re.search(r'\$[\d,.]+', original_price_text)
                 if match:
-                    original_price = match.group()
+                    original_price = format_price(match.group())
                 else:
                     original_price = "No se encontró el precio original."
             else:
