@@ -9,13 +9,14 @@ import time
 import re
 from amazoncaptcha import AmazonCaptcha
 import os
+import random
 
 # Configuración del Bot de Telegram
 TELEGRAM_BOT_TOKEN = '7227911386:AAF-OyBnbcRfSrd7XMmk1Qq2-YZGXXRIbME'  # Reemplaza con tu token de bot
 TELEGRAM_CHAT_ID = '-1002302040412'  # Reemplaza con el ID de tu grupo
 
 # Cargar el archivo JSON con las URLs
-with open('enlaces_amz.json', 'r') as file:
+with open('enlacesAfiliadoAmz.json', 'r') as file:
     urls = json.load(file)
 
 # Configurar el driver de Selenium
@@ -121,13 +122,13 @@ for url in urls:
             if spans:
                 current_price = format_price(spans[0].text)
             else:
-                current_price = "No se encontró el precio actual."
+                current_price = None  # Cambiado para indicar que no se encontró el precio
             
             discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
             if discount_elements:
                 discount = discount_elements[0].text
             else:
-                discount = "No se encontró descuento."
+                discount = None  # Cambiado para indicar que no se encontró el descuento
             
             original_price_elements = driver.find_elements(
                 By.XPATH,
@@ -164,26 +165,40 @@ for url in urls:
             else:
                 precio_formatted = f"Precio: ${current_price}"
             
-            # Construir el mensaje
-            mensaje = (
-                f"{sanitize_text(title_text)}\n"
-                f"ENLACE: {url}\n\n"
-                f"{precio_formatted}\n\n"
-                f"Descuento: {discount} 🔥🔥"
-            )
-            
-            # Añadir 'meses sin intereses' solo si está disponible
-            if installment_text:
-                mensaje += f"\n\nen {installment_text} 😱"
-            
-            # Enviar el mensaje a Telegram
-            send_telegram_message(mensaje, image_src)
+            # Construir el mensaje solo si se encontró el precio y el descuento
+            if current_price and discount:
+                # Seleccionar emojis aleatorios
+                installment_emoji = random.choice(["🤯", "🥳", "🔥", "✨"])
+                discount_emoji = random.choice(["🔥🔥", "🔥", "🧐", "⭐", "✨"])
+                offer_emoji = random.choice(["👉", "👇"])
+                
+                # Elegir entre "Ver oferta" o "Aprovecha esta oferta"
+                offer_text = random.choice(["Ver oferta", "Aprovecha esta oferta"])
+                
+                # Elegir entre "Enlace al Producto aquí" o "link"
+                link_text = random.choice(["Enlace al Producto aquí", "link"])
+                
+                mensaje = (
+                    f"{sanitize_text(title_text)}\n\n"  # Agregar espacio entre el título y el enlace
+                    f"{offer_text} {offer_emoji}: {link_text} {url}\n\n"
+                    f"{precio_formatted}\n\n"
+                    f"Descuento: {discount} {discount_emoji}"
+                )
+                
+                # Añadir 'meses sin intereses' solo si está disponible
+                if installment_text:
+                    mensaje += f"\n\nen {installment_text} {installment_emoji}"
+                
+                # Enviar el mensaje a Telegram
+                send_telegram_message(mensaje, image_src)
+            else:
+                print(f"No se encontró el precio o el descuento para el enlace: {url}")
         
         else:
             print(f"Error al acceder a la página: {response.status_code}")
         
         # Esperar 15 segundos antes de la siguiente iteración
-        time.sleep(15)
+        time.sleep(45)
     
     except Exception as e:
         print(f"Error al procesar la URL {url}: {e}")

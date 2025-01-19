@@ -8,6 +8,9 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import time
 import requests
+import pandas as pd
+from datetime import datetime
+import os
 
 def process_url(driver, url):
     driver.get(url)
@@ -67,14 +70,14 @@ def buscar_links_mercadolibre():
             print("No se encontraron enlaces de amazon en la página de descuentos.")
         
         # Load existing links from JSON
-        with open('enlaces_amz.json', 'r') as file:
+        with open('enlaces_amz_noafilidos.json', 'r') as file:
             existing_links = json.load(file)
         
         # Append new links
         all_links = existing_links + links_amz_descuentos
         
         # Save updated links back to JSON
-        with open('enlaces_amz.json', 'w') as file:
+        with open('enlaces_amz_noafilidos.json', 'w') as file:
             json.dump(all_links, file, indent=4)
     
     except requests.RequestException as e:
@@ -105,11 +108,21 @@ for url in urls:
 all_enlaces = list(set(all_enlaces))
 
 # Guarda todos los enlaces en un archivo JSON
-with open('enlaces_amz.json', 'w') as json_file:
+with open('enlaces_amz_noafilidos.json', 'w') as json_file:
     json.dump(all_enlaces, json_file, indent=4)
+
+# Crear un archivo Excel con los enlaces
+fecha_actual = datetime.now().strftime('%d-%m-%y')
+nombre_archivo = f"{fecha_actual} Noafiliados.xlsx"
+df = pd.DataFrame(all_enlaces, columns=["Enlaces"])
+df.to_excel(nombre_archivo, index=False)
+
+# Eliminar el archivo JSON después de crear el Excel
 
 # Call the function to search for MercadoLibre links
 buscar_links_mercadolibre()
+
+os.remove('enlaces_amz_noafilidos.json')
 
 driver.quit()
 
