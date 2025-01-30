@@ -10,6 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+import random
 
 def load_enlaces_from_excel():
     # Obtener la fecha actual y la del día anterior
@@ -60,9 +61,34 @@ def solve_captcha(driver):
 def main():
     # Configuración del navegador
     options = Options()
-    options.add_argument("--start-maximized")
+    
+    # Agregar User-Agent aleatorio
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36'
+    ]
+    selected_user_agent = random.choice(user_agents)
+    
+    options.add_argument(f"--user-agent={selected_user_agent}")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+
+    # Configurar encabezados personalizados
+    custom_headers = {
+        'User-Agent': selected_user_agent,
+        'Accept-Language': 'da, en-gb, en',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Referer': 'https://www.google.com/'
+    }
+    
     service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(
+        service=service,
+        options=options
+    )
 
     # Cargar enlaces desde el archivo Excel
     enlaces = load_enlaces_from_excel()
@@ -84,7 +110,7 @@ def main():
                 print("Hizo clic en el enlace de Amazon.")
                 
                 # Esperar un momento para que el contenido cargue
-                time.sleep(2)
+                time.sleep(15)
                 
                 # Buscar el textarea dentro del div con la clase 'amzn-ss-text-textarea-container'
                 try:
