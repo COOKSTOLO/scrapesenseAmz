@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import random
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import time
 import pickle
@@ -182,26 +182,10 @@ for enlace in enlaces:
 enlaces_mercadolibre.extend(all_hrefs)
 enlaces_mercadolibre.append("finish")
 
-# Cargar enlaces del día anterior
-try:
-    fecha_anterior = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%y')
-    nombre_archivo_anterior = f"{fecha_anterior} Noafiliados.xlsx"
-    df_anterior = pd.read_excel(nombre_archivo_anterior)
-    enlaces_anterior = df_anterior["Enlaces"].tolist()
-except FileNotFoundError:
-    enlaces_anterior = []
-
-# Eliminar enlaces repetidos
-enlaces_mercadolibre = [link for link in enlaces_mercadolibre if link not in enlaces_anterior]
-
 # Guardar en Excel
 fecha_actual = datetime.now().strftime('%d-%m-%y')
 nombre_archivo = f"{fecha_actual} Noafiliados.xlsx"
 pd.DataFrame(enlaces_mercadolibre, columns=["Enlaces"]).to_excel(nombre_archivo, index=False)
-
-# Eliminar el archivo Excel del día de hoy
-if os.path.exists(nombre_archivo):
-    os.remove(nombre_archivo)
 
 # Limpiar archivos temporales
 if os.path.exists("enlaces.json"):
