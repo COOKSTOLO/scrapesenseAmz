@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import re
-from amazoncaptcha import AmazonCaptcha
 import os
 import random
 import pickle  # Asegúrate de importar el módulo pickle
