@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 import time
 import requests
 import pandas as pd
-from datetime import datetime
-import os
+from datetime import datetime, timedelta
+import os 
 import random
 import pickle
 from selenium.webdriver.support.ui import WebDriverWait
@@ -62,6 +62,8 @@ def process_url(driver, url):
         return []
 
 def buscar_links_mercadolibre():
+    fecha_actual = datetime.now().strftime('%d-%m-%y')
+    nombre_archivo_json = f"{fecha_actual} Noafiliados.json"
     url_descuentos_amz = "https://www.descuento.com.mx/buscar?keyword=amazon"
     try:
         respuesta_descuentos = requests.get(url_descuentos_amz)
@@ -70,22 +72,22 @@ def buscar_links_mercadolibre():
         elementos_descuentos = soup_descuentos.find_all('a', class_='badge badge-info price', href=True)
         links_amz_descuentos = [elemento['href'] for elemento in elementos_descuentos][:15]
         
-        # Verificar si el archivo existe, si no, crear uno vacío
-        if not os.path.exists('enlaces_amz_noafilidos.json'):
-            with open('enlaces_amz_noafilidos.json', 'w') as file:
+        # Verificar si el archivo Noafiliados.json existe, si no, crear uno vacío
+        if not os.path.exists(nombre_archivo_json):
+            with open(nombre_archivo_json, 'w') as file:
                 json.dump([], file)  # Crear un archivo JSON vacío
 
-        # Cargar enlaces existentes
-        with open('enlaces_amz_noafilidos.json', 'r') as file:
+        # Cargar enlaces existentes desde Noafiliados.json
+        with open(nombre_archivo_json, 'r') as file:
             existing_links = json.load(file)
-        
-        # Append new links
+
+        # Append new links directamente a Noafiliados.json
         all_links = existing_links + links_amz_descuentos
-        
-        # Save updated links back to JSON
-        with open('enlaces_amz_noafilidos.json', 'w') as file:
+
+        # Save updated links back to Noafiliados.json
+        with open(nombre_archivo_json, 'w') as file:
             json.dump(all_links, file, indent=4)
-    
+
     except requests.RequestException as e:
         print(f"Error al obtener los enlaces de descuentos: {e}")
 
@@ -97,17 +99,13 @@ driver_keepa = webdriver.Chrome(service=service_keepa, options=options_keepa)
 
 # Procesar URLs de Keepa
 urls_keepa = [
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C3100000%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A4%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C70%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C3100000%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A4%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C2147483647%5D%2C"minRating"%3A50%2C"isLowest"%3Atrue%2C"isLowest90"%3Atrue%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Atrue%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C3100000%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B11260452011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B7%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A40%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B122183116011%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A40%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Atrue%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B18%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C2147483647%5D%2C"minRating"%3A50%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B18%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C2147483647%5D%2C"minRating"%3A50%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"4"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
-    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C3100000%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A4%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B599382031%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C70%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C2147483647%5D%2C"minRating"%3A40%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B20%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B10000%2C3100000%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482640011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A40%2C"isLowest"%3Afalse%2C"isLowest90"%3Atrue%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Atrue%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B11260452011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B7%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A40%2C"isLowest"%3Atrue%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Atrue%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
+    'https://keepa.com/?&#!deals/%7B"page"%3A0%2C"domainId"%3A"11"%2C"excludeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"includeCategories"%3A%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B9482558011%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%5D%2C"priceTypes"%3A%5B0%5D%2C"deltaRange"%3A%5B0%2C2147483647%5D%2C"deltaPercentRange"%3A%5B10%2C80%5D%2C"salesRankRange"%3A%5B-1%2C-1%5D%2C"currentRange"%3A%5B15500%2C2147483647%5D%2C"minRating"%3A-1%2C"isLowest"%3Afalse%2C"isLowest90"%3Afalse%2C"isLowestOffer"%3Afalse%2C"isOutOfStock"%3Afalse%2C"titleSearch"%3A""%2C"isRangeEnabled"%3Atrue%2C"isFilterEnabled"%3Afalse%2C"filterErotic"%3Atrue%2C"singleVariation"%3Atrue%2C"hasReviews"%3Afalse%2C"isPrimeExclusive"%3Afalse%2C"mustHaveAmazonOffer"%3Afalse%2C"mustNotHaveAmazonOffer"%3Afalse%2C"sortType"%3A3%2C"dateRange"%3A"0"%2C"warehouseConditions"%3A%5B1%2C2%2C3%2C4%2C5%5D%2C"settings"%3A%7B"viewTyp"%3A0%7D%2C"perPage"%3A150%7D',
 ]
 
 # Process Keepa URLs
@@ -120,12 +118,6 @@ all_enlaces = list(set(all_enlaces))
 
 # Obtener enlaces de descuentos.com.mx
 buscar_links_mercadolibre()
-
-# Cargar enlaces existentes y combinar
-with open('enlaces_amz_noafilidos.json', 'r') as file:
-    existing_links = json.load(file)
-all_enlaces.extend(existing_links)
-all_enlaces = list(set(all_enlaces))
 
 driver_keepa.quit()  # Cerrar el driver de Keepa
 
@@ -163,14 +155,64 @@ driver_promo.quit()
 all_enlaces.extend(enlaces_promodescuentos)
 all_enlaces = list(set(all_enlaces))
 
-# Generar archivo Excel final
+# Generar archivo JSON final
 fecha_actual = datetime.now().strftime('%d-%m-%y')
-nombre_archivo = f"{fecha_actual} Noafiliados.xlsx"
-pd.DataFrame(all_enlaces, columns=["Enlaces"]).to_excel(nombre_archivo, index=False)
+nombre_archivo_json = f"{fecha_actual} Noafiliados.json"
+with open(nombre_archivo_json, 'w') as file:
+    json.dump(all_enlaces, file, indent=4)
 
-# Limpiar archivo JSON temporal
-if os.path.exists("enlaces_amz_noafilidos.json"):
-    os.remove("enlaces_amz_noafilidos.json")
+# Cargar títulos del día anterior
+fecha_anterior = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%y')
+nombre_archivo_titulos_anterior = f"{fecha_anterior} titulos.json"
+
+# Cargar títulos existentes del día anterior
+titulos_anterior = []
+if os.path.exists(nombre_archivo_titulos_anterior):
+    with open(nombre_archivo_titulos_anterior, 'r') as file:
+        titulos_anterior = json.load(file)
+
+# Obtener títulos de cada enlace y guardarlos en un JSON
+titulos = []
+
+# Recorrer todos los enlaces de Keepa
+for enlace in all_enlaces:
+    try:
+        response = requests.get(enlace)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        title = soup.find('span', id='productTitle')  # Ajusta el selector según sea necesario
+        if title:
+            title_text = title.get_text(strip=True)
+            titulos.append(title_text)
+    except Exception as e:
+        print(f"Error al obtener el título de {enlace}: {e}")
+
+# Asegúrate de que también se busquen títulos de enlaces de PromoDescuentos y Descuento.mx
+# Aquí puedes agregar lógica similar para esos enlaces si son diferentes
+
+# Comparar títulos y eliminar enlaces duplicados
+enlaces_a_eliminar = []
+for enlace, title in zip(all_enlaces, titulos):
+    if title in titulos_anterior:
+        enlaces_a_eliminar.append(enlace)
+
+# Contar la cantidad de enlaces a eliminar
+cantidad_eliminados = len(enlaces_a_eliminar)
+print(f"Cantidad de enlaces filtrados: {cantidad_eliminados}")
+
+# Eliminar enlaces duplicados de all_enlaces
+all_enlaces = [enlace for enlace in all_enlaces if enlace not in enlaces_a_eliminar]
+
+# Guardar títulos en un archivo JSON
+fecha_actual = datetime.now().strftime('%d-%m-%y')
+nombre_archivo_titulos = f"{fecha_actual} titulos.json"
+with open(nombre_archivo_titulos, 'w') as file:
+    json.dump(titulos, file, indent=4)
+
+# Guardar enlaces actualizados en noafiliados.json
+with open(nombre_archivo_json, 'w') as file:
+    json.dump(all_enlaces, file, indent=4)
+
+
 
 
 

@@ -12,26 +12,21 @@ from datetime import datetime, timedelta
 import os
 import random
 
-def load_enlaces_from_excel():
+def load_enlaces_from_json():
     # Obtener la fecha actual y la del día anterior
     fecha_actual = datetime.now().strftime('%d-%m-%y')
     fecha_anterior = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%y')
     
-    # Leer el archivo Excel del día actual
-    nombre_archivo_actual = f"{fecha_actual} Noafiliados.xlsx"
-    df_actual = pd.read_excel(nombre_archivo_actual)
-    enlaces_actuales = df_actual['Enlaces'].tolist()
+    # Leer el archivo JSON del día actual
+    nombre_archivo_actual = f"{fecha_actual} Noafiliados.json"
+    with open(nombre_archivo_actual, 'r') as file:
+        enlaces_actuales = json.load(file)
     
-    # Leer el archivo Excel del día anterior si existe
-    nombre_archivo_anterior = f"{fecha_anterior} Noafiliados.xlsx"
-    if os.path.exists(nombre_archivo_anterior):
-        df_anterior = pd.read_excel(nombre_archivo_anterior)
-        enlaces_anteriores = df_anterior['Enlaces'].tolist()
-    else:
-        enlaces_anteriores = []
+    # No se lee el archivo del día anterior
+    enlaces_anteriores = []
     
-    # Eliminar duplicados comparando con el día anterior
-    enlaces_unicos = list(set(enlaces_actuales) - set(enlaces_anteriores))
+    # Eliminar duplicados (ya no se compara con el día anterior)
+    enlaces_unicos = enlaces_actuales
     
     return enlaces_unicos
 
@@ -90,8 +85,8 @@ def main():
         options=options
     )
 
-    # Cargar enlaces desde el archivo Excel
-    enlaces = load_enlaces_from_excel()
+    # Cargar enlaces desde el archivo JSON
+    enlaces = load_enlaces_from_json()
     enlaces_afiliados = []
 
     for enlace in enlaces:
