@@ -131,6 +131,15 @@ def save_title_to_excel(title: str):
         else:
             df = pd.DataFrame(columns=['titulo'])
         
+        # Verificar si el título ya está en el archivo del día anterior
+        yesterday_date = (datetime.now() - pd.Timedelta(days=1)).strftime("%d-%m-%Y")
+        yesterday_filename = f'titulos_enviados_{yesterday_date}.xlsx'
+        if os.path.exists(yesterday_filename):
+            df_yesterday = pd.read_excel(yesterday_filename)
+            if title in df_yesterday['titulo'].values:
+                print(f"El título '{title}' ya existe en el archivo de ayer. No se guardará.")
+                return  # No guardar si ya existe en el archivo de ayer
+        
         # Añadir el nuevo título al DataFrame usando pd.concat
         new_row = pd.DataFrame([data])  # Crear un DataFrame de una fila
         df = pd.concat([df, new_row], ignore_index=True)  # Concatenar el nuevo DataFrame
@@ -301,8 +310,13 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
             # Añadir el mensaje de grupos al final
             mensaje += "⚡️Únete a nuestros otros grupos: linktr.ee/GigaOfertasMx\n#OfertasAmazon #GigaOfertasMx"  # Texto agregado
             
-            # Enviar el mensaje a Telegram
-            send_telegram_message(mensaje, image_src)
+            # Verificar si el título ya existe en el archivo de ayer antes de enviar el mensaje
+            if check_title_in_excel(title_text):  # Verificar si el título ya existe en el Excel de ayer
+                print(f"El título '{title_text}' ya existe en el archivo de ayer. No se enviará el mensaje a Telegram.")
+                urls.remove(url)  # Eliminar el enlace de la lista
+            else:
+                # Enviar el mensaje a Telegram
+                send_telegram_message(mensaje, image_src)
             
             # Guardar el título en el archivo Excel
             save_title_to_excel(title_text)  # Llamar a la función para guardar el título
@@ -311,10 +325,6 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
         
         # Esperar 15 minutos antes de la siguiente iteración
         time.sleep(700)
-        
-        # Eliminar el enlace procesado de la lista
-        if not check_title_in_excel(title_text):  # Verificar si el título ya existe en el Excel de ayer
-            urls.remove(url)  # Eliminar el enlace de la lista
         
         # Actualizar el archivo JSON después de eliminar el enlace
         with open('enlacesAfiliadoAmz.json', 'w') as file:
