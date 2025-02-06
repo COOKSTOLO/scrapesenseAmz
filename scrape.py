@@ -140,6 +140,18 @@ def save_title_to_excel(title: str):
     except Exception as e:
         print(f"Error al guardar el título en Excel: {e}")
 
+def check_title_in_excel(title: str) -> bool:
+    # Obtener la fecha de ayer
+    yesterday_date = (datetime.now() - pd.Timedelta(days=1)).strftime("%d-%m-%Y")
+    excel_filename = f'titulos_enviados_{yesterday_date}.xlsx'
+    
+    # Verificar si el archivo existe y leerlo
+    if os.path.exists(excel_filename):
+        df = pd.read_excel(excel_filename)
+        # Comprobar si el título ya está en el DataFrame
+        return title in df['titulo'].values
+    return False
+
 # Cargar las cookies desde el archivo antes de hacer scraping
 
 # Iterar sobre cada URL
@@ -301,7 +313,8 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
         time.sleep(700)
         
         # Eliminar el enlace procesado de la lista
-        urls.remove(url)  # Eliminar el enlace de la lista
+        if not check_title_in_excel(title_text):  # Verificar si el título ya existe en el Excel de ayer
+            urls.remove(url)  # Eliminar el enlace de la lista
         
         # Actualizar el archivo JSON después de eliminar el enlace
         with open('enlacesAfiliadoAmz.json', 'w') as file:
