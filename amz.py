@@ -134,7 +134,6 @@ with open('PromoDescuento.pkl', 'rb') as file:
     cookies = pickle.load(file)
     for cookie in cookies:
         driver_promo.add_cookie(cookie)
-
 # Navegar a ofertas de Amazon en PromoDescuentos
 driver_promo.get("https://www.promodescuentos.com/search/ofertas?merchant-id=85")
 wait = WebDriverWait(driver_promo, 22)
@@ -171,28 +170,10 @@ if os.path.exists(nombre_archivo_titulos_anterior):
     with open(nombre_archivo_titulos_anterior, 'r') as file:
         titulos_anterior = json.load(file)
 
-# Obtener títulos de cada enlace y guardarlos en un JSON
-titulos = []
-
-# Recorrer todos los enlaces de Keepa
-for enlace in all_enlaces:
-    try:
-        response = requests.get(enlace)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        title = soup.find('span', id='productTitle')  # Ajusta el selector según sea necesario
-        if title:
-            title_text = title.get_text(strip=True)
-            titulos.append(title_text)
-    except Exception as e:
-        print(f"Error al obtener el título de {enlace}: {e}")
-
-# Asegúrate de que también se busquen títulos de enlaces de PromoDescuentos y Descuento.mx
-# Aquí puedes agregar lógica similar para esos enlaces si son diferentes
-
 # Comparar títulos y eliminar enlaces duplicados
 enlaces_a_eliminar = []
-for enlace, title in zip(all_enlaces, titulos):
-    if title in titulos_anterior:
+for enlace in all_enlaces:
+    if enlace in titulos_anterior:
         enlaces_a_eliminar.append(enlace)
 
 # Contar la cantidad de enlaces a eliminar
@@ -201,12 +182,6 @@ print(f"Cantidad de enlaces filtrados: {cantidad_eliminados}")
 
 # Eliminar enlaces duplicados de all_enlaces
 all_enlaces = [enlace for enlace in all_enlaces if enlace not in enlaces_a_eliminar]
-
-# Guardar títulos en un archivo JSON
-fecha_actual = datetime.now().strftime('%d-%m-%y')
-nombre_archivo_titulos = f"{fecha_actual} titulos.json"
-with open(nombre_archivo_titulos, 'w') as file:
-    json.dump(titulos, file, indent=4)
 
 # Guardar enlaces actualizados en noafiliados.json
 with open(nombre_archivo_json, 'w') as file:

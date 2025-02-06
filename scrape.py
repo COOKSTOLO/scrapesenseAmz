@@ -10,6 +10,8 @@ import re
 import os
 import random
 import pickle  # Asegúrate de importar el módulo pickle
+from datetime import datetime
+import pandas as pd
 
 # Configuración del Bot de Telegram
 TELEGRAM_BOT_TOKEN = '7227911386:AAF-OyBnbcRfSrd7XMmk1Qq2-YZGXXRIbME'  # Reemplaza con tu token de bot
@@ -108,6 +110,35 @@ def format_price(price: str) -> str:
 
 def sanitize_text(text: str) -> str:
     return text.encode('utf-8', 'ignore').decode('utf-8')
+
+def save_title_to_excel(title: str):
+    # Obtener la fecha actual
+    current_date = datetime.now().strftime("%d-%m-%Y")
+    
+    # Crear un diccionario con el título
+    data = {
+        'titulo': title
+    }
+    
+    # Guardar en el archivo Excel con la fecha en el nombre
+    try:
+        # Cambiar el nombre del archivo para incluir la fecha
+        excel_filename = f'titulos_enviados_{current_date}.xlsx'
+        
+        # Leer el archivo existente o crear uno nuevo
+        if os.path.exists(excel_filename):
+            df = pd.read_excel(excel_filename)
+        else:
+            df = pd.DataFrame(columns=['titulo'])
+        
+        # Añadir el nuevo título al DataFrame usando pd.concat
+        new_row = pd.DataFrame([data])  # Crear un DataFrame de una fila
+        df = pd.concat([df, new_row], ignore_index=True)  # Concatenar el nuevo DataFrame
+        
+        # Guardar el DataFrame en el archivo Excel
+        df.to_excel(excel_filename, index=False)
+    except Exception as e:
+        print(f"Error al guardar el título en Excel: {e}")
 
 # Cargar las cookies desde el archivo antes de hacer scraping
 
@@ -260,6 +291,9 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
             
             # Enviar el mensaje a Telegram
             send_telegram_message(mensaje, image_src)
+            
+            # Guardar el título en el archivo Excel
+            save_title_to_excel(title_text)  # Llamar a la función para guardar el título
         else:
             print(f"No se encontró el precio para el enlace: {url}")
         
