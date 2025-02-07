@@ -313,10 +313,12 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
             # Verificar si el título ya existe en el archivo de ayer antes de enviar el mensaje
             if check_title_in_excel(title_text):  # Verificar si el título ya existe en el Excel de ayer
                 print(f"El título '{title_text}' ya existe en el archivo de ayer. No se enviará el mensaje a Telegram.")
-                urls.remove(url)  # Eliminar el enlace de la lista
             else:
                 # Enviar el mensaje a Telegram
                 send_telegram_message(mensaje, image_src)
+                
+                # Eliminar el enlace de la lista después de enviar el mensaje
+                urls.remove(url)  # Eliminar el enlace de la lista
             
             # Guardar el título en el archivo Excel
             save_title_to_excel(title_text)  # Llamar a la función para guardar el título
@@ -324,7 +326,7 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
             print(f"No se encontró el precio para el enlace: {url}")
         
         # Esperar 15 minutos antes de la siguiente iteración
-        time.sleep(700)
+        time.sleep(20)
         
         # Actualizar el archivo JSON después de eliminar el enlace
         with open('enlacesAfiliadoAmz.json', 'w') as file:
