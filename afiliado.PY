@@ -98,6 +98,14 @@ def main():
             # Cargar cookies
             load_cookies(driver, 'cookies.pkl')
             
+            # Intentar hacer clic en el botón de cierre si está presente
+            try:
+                close_button = driver.find_element(By.CSS_SELECTOR, ".a-icon.aod-close-button")
+                close_button.click()
+                print("Botón de cierre detectado y clickeado.")
+            except Exception as e:
+                print(f"No se encontró el botón de cierre: {e}")
+            
             # Intentar hacer clic en el elemento con id 'amzn-ss-text-link'
             try:
                 driver.find_element(By.ID, "amzn-ss-text-link").click()
@@ -130,10 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-

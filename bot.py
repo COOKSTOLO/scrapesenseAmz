@@ -9,14 +9,28 @@ import time
 import re
 import os
 import random
-import pickle  # Asegúrate de importar el módulo pickle
+import pickle  # Para guardar/cargar cookies si lo requieres
 from datetime import datetime
 import pandas as pd
 
-# Configuración del Bot de Telegram
-TELEGRAM_BOT_TOKEN = '7227911386:AAF-OyBnbcRfSrd7XMmk1Qq2-YZGXXRIbME'  # Reemplaza con tu token de bot
-TELEGRAM_CHAT_ID = '-1002302040412'  # Reemplaza con el ID de tu grupo
+# ------------------------ Telethon (como usuario real) ------------------------
+from telethon.sync import TelegramClient
+from io import BytesIO
 
+# Credenciales de Telethon (debes obtenerlas en https://my.telegram.org)
+api_id = 25673948  # Debe ser un número (entero)
+api_hash = '783586f391e313a21333e749ec85b931'
+phone = '+529932516506'  # Tu número de teléfono con código de país
+
+# Nombre de usuario del grupo (puedes usar el username o el link)
+TELEGRAM_GROUP = 'OfertonazosMx'  # Este es el nombre del grupo según el link: https://t.me/OfertonazosMx
+
+# Iniciar el cliente de Telethon (se creará un archivo de sesión 'session_name.session')
+client = TelegramClient('session_name', api_id, api_hash)
+client.start(phone=phone)
+print("Cliente de Telethon iniciado con éxito.")
+
+# --------------------- Configuración de Selenium ---------------------
 # Cargar el archivo JSON con las URLs
 with open('enlacesAfiliadoAmz.json', 'r') as file:
     urls = json.load(file)
@@ -52,7 +66,7 @@ options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 
-# Configurar encabezados personalizados (esto no se aplica directamente en Selenium, pero puedes usarlo en solicitudes HTTP)
+# (Opcional) Si necesitas definir headers personalizados para requests, puedes usarlos cuando hagas solicitudes HTTP.
 custom_headers = {
     'User-Agent': selected_user_agent,
     'Accept-Language': 'da, en-gb, en',
@@ -67,49 +81,32 @@ driver = webdriver.Chrome(
     options=options
 )
 
+# ------------------------- Funciones -------------------------
 def send_telegram_message(message: str, photo_url: str = None):
+    """
+    Envía un mensaje (y opcionalmente una imagen) al chat/grupo de Telegram usando Telethon.
+    """
     try:
         if photo_url:
-            # Descargar la imagen
             response = requests.get(photo_url)
             if response.status_code == 200:
-                files = {'photo': response.content}
-                data = {
-                    'chat_id': TELEGRAM_CHAT_ID,
-                    'caption': message,
-                    'parse_mode': 'HTML'  # Usar HTML para el formateo
-                }
-                send_photo_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-                response = requests.post(send_photo_url, data=data, files=files)
-                if response.status_code != 200:
-                    print(f"Error al enviar la foto: {response.text}")
+                # Usar BytesIO para enviar la imagen sin necesidad de guardarla en disco
+                from io import BytesIO
+                photo_file = BytesIO(response.content)
+                photo_file.name = 'image.jpg'
+                client.send_file(TELEGRAM_GROUP, photo_file, caption=message, parse_mode='html')
             else:
                 # Si no se pudo descargar la imagen, enviar solo el mensaje
-                send_message_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-                data = {
-                    'chat_id': TELEGRAM_CHAT_ID,
-                    'text': message,
-                    'parse_mode': 'HTML'  # Usar HTML para el formateo
-                }
-                response = requests.post(send_message_url, data=data)
-                if response.status_code != 200:
-                    print(f"Error al enviar el mensaje: {response.text}")
+                client.send_message(TELEGRAM_GROUP, message, parse_mode='html')
         else:
-            # Enviar solo el mensaje
-            send_message_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            data = {
-                'chat_id': TELEGRAM_CHAT_ID,
-                'text': message,
-                'parse_mode': 'HTML'  # Usar HTML para el formateo
-            }
-            response = requests.post(send_message_url, data=data)
-            if response.status_code != 200:
-                print(f"Error al enviar el mensaje: {response.text}")
+            client.send_message(TELEGRAM_GROUP, message, parse_mode='html')
+        print("Mensaje enviado a Telegram correctamente.")
     except Exception as e:
-        print(f"Error al enviar mensaje a Telegram: {e}")
+        print(f"Error al enviar mensaje vía Telethon: {e}")
 
 def solve_captcha(driver):
     try:
+        # Se asume que cuentas con una clase o método AmazonCaptcha para resolver el captcha.
         link = driver.find_element(By.XPATH, "//div[@class='a-row a-text-center']//img").get_attribute('src')
         captcha = AmazonCaptcha.fromlink(link)
         captcha_value = AmazonCaptcha.solve(captcha)
@@ -138,7 +135,6 @@ def save_title_to_excel(title: str):
     
     # Guardar en el archivo Excel con la fecha en el nombre
     try:
-        # Cambiar el nombre del archivo para incluir la fecha
         excel_filename = f'titulos_enviados_{current_date}.xlsx'
         
         # Leer el archivo existente o crear uno nuevo
@@ -157,8 +153,8 @@ def save_title_to_excel(title: str):
                 return  # No guardar si ya existe en el archivo de ayer
         
         # Añadir el nuevo título al DataFrame usando pd.concat
-        new_row = pd.DataFrame([data])  # Crear un DataFrame de una fila
-        df = pd.concat([df, new_row], ignore_index=True)  # Concatenar el nuevo DataFrame
+        new_row = pd.DataFrame([data])
+        df = pd.concat([df, new_row], ignore_index=True)
         
         # Guardar el DataFrame en el archivo Excel
         df.to_excel(excel_filename, index=False)
@@ -170,22 +166,19 @@ def check_title_in_excel(title: str) -> bool:
     yesterday_date = (datetime.now() - pd.Timedelta(days=1)).strftime("%d-%m-%Y")
     excel_filename = f'titulos_enviados_{yesterday_date}.xlsx'
     
-    # Verificar si el archivo existe y leerlo
     if os.path.exists(excel_filename):
         df = pd.read_excel(excel_filename)
-        # Comprobar si el título ya está en el DataFrame
         return title in df['titulo'].values
     return False
 
-# Cargar las cookies desde el archivo antes de hacer scraping
-
-# Iterar sobre cada URL
-for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modificarla
+# ------------------------- Bucle principal -------------------------
+for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al modificarla
     try:
-        driver.get(url)  # Primero, accede a la URL para establecer el dominio
-        driver.get(url)  # Acceder nuevamente a la URL después de cargar las cookies
+        # Acceder a la URL (dos veces para asegurarnos de establecer cookies si las hubiese)
+        driver.get(url)
+        driver.get(url)
         
-        # Esperar 5 segundos para que la página cargue
+        # Esperar a que la página cargue
         time.sleep(10)
 
         # Resolver CAPTCHA si es necesario
@@ -193,20 +186,20 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
             captcha_image = driver.find_element(By.XPATH, "//div[@class='a-row a-text-center']//img")
             if captcha_image:
                 solve_captcha(driver)
-        except:
+        except Exception as e:
             print("No se encontró captcha, continuando con el scraping.")
 
-        # Usar el contenido de Selenium en lugar de requests
+        # Usar el contenido de Selenium para el scraping
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
         
-        # Verificar si se encontró el título
+        # Extraer el título del producto
         title = soup.find('span', id='productTitle')
         if title:
             title_text = title.get_text(strip=True)
         else:
-            # Intentar buscar el título de otra manera
-            time.sleep(5)  # Esperar 5 segundos
+            # Intentar obtenerlo de otra forma
+            time.sleep(5)
             try:
                 title_element = driver.find_element(By.CLASS_NAME, 'a-size-large.product-title-word-break')
                 title_text = title_element.text
@@ -215,13 +208,12 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
                 title_text = "No se encontró el título."
                 print(f"Error al encontrar el título: {e}")
 
-        # Verificar si se encontró el precio
+        # Extraer el precio
         price_whole = driver.find_elements(By.CLASS_NAME, 'a-price-whole')
         if price_whole:
             current_price = format_price(price_whole[0].text)
         else:
-            # Intentar buscar el precio de otra manera
-            time.sleep(5)  # Esperar 5 segundos
+            time.sleep(5)
             try:
                 price_span = driver.find_element(By.CLASS_NAME, 'a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay')
                 price_whole_elements = price_span.find_elements(By.CLASS_NAME, 'a-price-whole')
@@ -232,14 +224,13 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
                 current_price = None
                 print(f"Error al encontrar el precio: {e}")
 
-        # Verificar si se encontró la imagen
+        # Extraer la imagen
         img_divs = driver.find_elements(By.ID, 'imgTagWrapperId')
         if img_divs:
             img = img_divs[0].find_element(By.TAG_NAME, 'img')
             image_src = img.get_attribute('src') if img else None
         else:
-            # Intentar buscar la imagen de otra manera
-            time.sleep(5)  # Esperar 5 segundos
+            time.sleep(5)
             try:
                 img_wrapper = driver.find_element(By.ID, 'imgTagWrapperId')
                 img_element = img_wrapper.find_element(By.TAG_NAME, 'img')
@@ -249,20 +240,20 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
                 image_src = None
                 print(f"Error al encontrar la imagen: {e}")
         
-        discount_elements = driver.find_elements(By.XPATH, '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]')
-        if discount_elements:
-            discount = discount_elements[0].text
-        else:
-            discount = None  # Cambiado para indicar que no se encontró el descuento
+        # Extraer el descuento (si existe)
+        discount_elements = driver.find_elements(
+            By.XPATH,
+            '//span[@aria-hidden="true" and contains(@class, "a-size-large a-color-price savingPriceOverride aok-align-center reinventPriceSavingsPercentageMargin savingsPercentage")]'
+        )
+        discount = discount_elements[0].text if discount_elements else None
         
+        # Extraer el precio original (si existe)
         original_price_elements = driver.find_elements(
             By.XPATH,
             '//span[@aria-hidden="true" and (contains(text(), "Precio anterior:") or contains(text(), "Precio de lista:")) and not(contains(text(), "mililitro"))]'
         )
         if original_price_elements:
-            # Extraer solo el valor numérico del precio original
             original_price_text = original_price_elements[0].text.strip()
-            # Usar expresión regular para eliminar "Precio anterior:" o "Precio de lista:"
             match = re.search(r'\$[\d,.]+', original_price_text)
             if match:
                 original_price = format_price(match.group())
@@ -271,92 +262,78 @@ for url in urls[:]:  # Usar una copia de la lista para evitar problemas al modif
         else:
             original_price = "No se encontró el precio original."
         
+        # Extraer información de meses sin intereses (si existe)
         installment_elements = driver.find_elements(By.ID, 'installmentCalculator_feature_div')
         if installment_elements:
             installment_text = installment_elements[0].text.strip()
-            # Verificar si realmente contiene información de meses sin intereses
             if "meses sin intereses" not in installment_text.lower():
                 installment_text = None
             else:
-                # Eliminar la parte "Ver 2 planes de pago" utilizando expresión regular
-                # Suponiendo que la frase siempre está separada por un punto
                 installment_text = re.sub(r'\.\s*Ver\s*\d+\s*planes de pago', '', installment_text)
         else:
             installment_text = None
         
-        # Verificar si se encontró el precio original
+        # Formatear el precio para el mensaje
         if original_price != "No se encontró el precio original.":
             precio_formatted = f"De {original_price} A ${current_price}"
         else:
-            # Intentar obtener el precio entero si no se encontró el precio original
-            price_span = driver.find_element(By.CLASS_NAME, 'a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay')
-            price_whole_elements = price_span.find_elements(By.CLASS_NAME, 'a-price-whole')
-            if price_whole_elements:
-                current_price = format_price(price_whole_elements[0].text)
-                precio_formatted = f"Precio: ${current_price}"
-            else:
+            try:
+                price_span = driver.find_element(By.CLASS_NAME, 'a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay')
+                price_whole_elements = price_span.find_elements(By.CLASS_NAME, 'a-price-whole')
+                if price_whole_elements:
+                    current_price = format_price(price_whole_elements[0].text)
+                    precio_formatted = f"Precio: ${current_price}"
+                else:
+                    precio_formatted = "No se encontró el precio."
+            except Exception as e:
                 precio_formatted = "No se encontró el precio."
+                print(f"Error al formatear el precio: {e}")
         
-        # Construir el mensaje solo si se encontró el precio
+        # Si se encontró precio, construir y enviar el mensaje
         if current_price:
-            # Seleccionar emojis aleatorios
+            # Seleccionar emojis y textos aleatorios
             installment_emoji = random.choice(["🤯", "🥳", "🔥", "✨"])
             offer_emoji = random.choice(["👉", "👇"])
-            
-            # Elegir entre "Ver oferta" o "Aprovecha esta oferta"
             offer_text = random.choice(["Ver oferta", "Aprovecha esta oferta"])
-            
-            # Elegir entre "Enlace al Producto aquí" o "link"
             link_text = random.choice(["Enlace al Producto aquí", "link"])
             
             mensaje = (
-                f"{sanitize_text(title_text)}\n\n"  # Doble salto de línea después del título
-                f"{offer_text} {offer_emoji}: {link_text} {url}\n\n"  # Doble salto de línea después de la oferta
-                f"{precio_formatted}\n\n"  # Doble salto de línea después del precio
+                f"{sanitize_text(title_text)}\n\n"
+                f"{offer_text} {offer_emoji}: {link_text} {url}\n\n"
+                f"{precio_formatted}\n\n"
             )
             
-            # Añadir 'meses sin intereses' solo si está disponible
             if installment_text:
-                mensaje += f"en {installment_text} {installment_emoji}\n\n"  # Doble salto de línea después de los meses sin intereses
+                mensaje += f"en {installment_text} {installment_emoji}\n\n"
             
-            # Añadir el descuento al mensaje solo si está disponible
             if discount:
-                mensaje += f"Descuento: {discount} {random.choice(['🔥🔥', '🔥', '🧐', '⭐', '✨'])}\n\n"  # Doble salto de línea después del descuento
+                mensaje += f"Descuento: {discount} {random.choice(['🔥🔥', '🔥', '🧐', '⭐', '✨'])}\n\n"
             
-            # Añadir el mensaje de grupos al final
-            mensaje += "⚡️Únete a nuestros otros grupos: linktr.ee/GigaOfertasMx\n#OfertasAmazon #GigaOfertasMx"  # Texto agregado
+            mensaje += "⚡️Únete a nuestros otros grupos: linktr.ee/GigaOfertasMx\n#OfertasAmazon #GigaOfertasMx"
             
-            # Verificar si el título ya existe en el archivo de ayer antes de enviar el mensaje
-            if check_title_in_excel(title_text):  # Verificar si el título ya existe en el Excel de ayer
+            # Verificar si el título ya existe en el Excel de ayer
+            if check_title_in_excel(title_text):
                 print(f"El título '{title_text}' ya existe en el archivo de ayer. No se enviará el mensaje a Telegram.")
             else:
-                # Enviar el mensaje a Telegram
                 send_telegram_message(mensaje, image_src)
-                
-                # Eliminar el enlace de la lista después de enviar el mensaje
-                urls.remove(url)  # Eliminar el enlace de la lista
+                # Eliminar el enlace de la lista después de enviarlo
+                urls.remove(url)
             
-            # Guardar el título en el archivo Excel
-            save_title_to_excel(title_text)  # Llamar a la función para guardar el título
+            # Guardar el título en el Excel
+            save_title_to_excel(title_text)
         else:
             print(f"No se encontró el precio para el enlace: {url}")
         
-        # Esperar 15 minutos antes de la siguiente iteración
+        # Esperar 15 minutos (450 segundos) antes de la siguiente iteración
         time.sleep(450)
         
-        # Actualizar el archivo JSON después de eliminar el enlace
+        # Actualizar el archivo JSON (guardamos la lista actualizada)
         with open('enlacesAfiliadoAmz.json', 'w') as file:
-            json.dump(urls, file, indent=4)  # Guardar la lista actualizada en el archivo JSON con formato
-
+            json.dump(urls, file, indent=4)
+    
     except Exception as e:
         print(f"Error al procesar la URL {url}: {e}")
 
-# Cerrar el driver después de procesar todas las URLs
+# Cerrar el driver de Selenium
 driver.quit()
-
-
-
-
-
-
-
+print("Proceso finalizado, driver cerrado.")
