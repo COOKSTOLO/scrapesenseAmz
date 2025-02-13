@@ -12,10 +12,16 @@ import random
 import pickle  # Para guardar/cargar cookies si lo requieres
 from datetime import datetime
 import pandas as pd
+import logging 
 
 # ------------------------ Telethon (como usuario real) ------------------------
 from telethon.sync import TelegramClient
 from io import BytesIO
+
+import logging
+
+logging.getLogger("telethon").setLevel(logging.CRITICAL)
+
 
 # Credenciales de Telethon (debes obtenerlas en https://my.telegram.org)
 api_id = 25673948  # Debe ser un número (entero)
@@ -290,7 +296,7 @@ for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al mod
                 print(f"Error al formatear el precio: {e}")
         
         # Si se encontró precio, construir y enviar el mensaje
-        if current_price:
+        if current_price and current_price != "No se encontró el precio.":
             # Seleccionar emojis y textos aleatorios
             installment_emoji = random.choice(["🤯", "🥳", "🔥", "✨"])
             offer_emoji = random.choice(["👉", "👇"])
@@ -323,9 +329,10 @@ for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al mod
             save_title_to_excel(title_text)
         else:
             print(f"No se encontró el precio para el enlace: {url}")
+            urls.remove(url)  # También removemos la URL si no se encuentra el precio
         
         # Esperar 15 minutos (450 segundos) antes de la siguiente iteración
-        time.sleep(450)
+        time.sleep(550)
         
         # Actualizar el archivo JSON (guardamos la lista actualizada)
         with open('enlacesAfiliadoAmz.json', 'w') as file:

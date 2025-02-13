@@ -136,5 +136,31 @@ def main():
 
     driver.quit()
 
+def process_enlaces():
+    fecha_actual = datetime.now().strftime('%d-%m-%y')
+    nombre_archivo_noafiliados = f"{fecha_actual} Noafiliados.json"
+    
+    try:
+        # Procesar los enlaces y generar enlacesafiliadosamz.json
+        enlaces = load_enlaces_from_json()
+        enlaces_afiliados = []
+        
+        for enlace in enlaces:
+            # ... proceso existente de enlaces ...
+            enlace_afiliado = convert_to_affiliate(enlace)
+            enlaces_afiliados.append(enlace_afiliado)
+        
+        # Guardar enlaces afiliados
+        with open(f"{fecha_actual} enlacesafiliadosamz.json", 'w') as f:
+            json.dump(enlaces_afiliados, f, indent=4)
+        
+        # Una vez terminado todo el proceso, eliminar el archivo Noafiliados.json
+        if os.path.exists(nombre_archivo_noafiliados):
+            os.remove(nombre_archivo_noafiliados)
+            print(f"Archivo {nombre_archivo_noafiliados} eliminado exitosamente.")
+            
+    except Exception as e:
+        print(f"Error durante el proceso: {e}")
+
 if __name__ == "__main__":
     main()
