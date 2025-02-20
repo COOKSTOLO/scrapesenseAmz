@@ -290,10 +290,10 @@ for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al mod
                     current_price = format_price(price_whole_elements[0].text)
                     precio_formatted = f"Precio: ${current_price}"
                 else:
-                    precio_formatted = "No se encontró el precio."
+                    current_price = None  # Si no hay precio, establecer current_price como None
             except Exception as e:
-                precio_formatted = "No se encontró el precio."
-                print(f"Error al formatear el precio: {e}")
+                current_price = None  # Si hay error, establecer current_price como None
+                print(f"Error al obtener el precio: {e}")
         
         # Si se encontró precio, construir y enviar el mensaje
         if current_price and current_price != "No se encontró el precio.":
@@ -329,6 +329,7 @@ for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al mod
             save_title_to_excel(title_text)
         else:
             print(f"No se encontró el precio para el enlace: {url}")
+            # No se envía el mensaje a Telegram si no se encuentra el precio
             urls.remove(url)  # También removemos la URL si no se encuentra el precio
         
         # Esperar 15 minutos (450 segundos) antes de la siguiente iteración
