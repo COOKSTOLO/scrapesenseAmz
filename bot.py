@@ -333,7 +333,7 @@ for url in urls[:]:  # Usamos una copia de la lista para evitar problemas al mod
             urls.remove(url)  # También removemos la URL si no se encuentra el precio
         
         # Esperar 15 minutos (450 segundos) antes de la siguiente iteración
-        time.sleep(900)
+        time.sleep(1300)
         
         # Actualizar el archivo JSON (guardamos la lista actualizada)
         with open('enlacesAfiliadoAmz.json', 'w') as file:
